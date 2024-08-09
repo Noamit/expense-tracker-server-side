@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 from db import db
 from dotenv import load_dotenv
 from flask_smorest import Api
@@ -8,6 +9,7 @@ from flask_migrate import Migrate
 import models
 
 from resources.user import blp as UserBlueprint
+from resources.expense import blp as ExpenseBlueprint
 
 
 def create_app(db_url=None):
@@ -16,7 +18,7 @@ def create_app(db_url=None):
     load_dotenv()
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
-    app.config["API_TITLE"] = "Stores REST API"
+    app.config["API_TITLE"] = "Expense Tracker REST API"
     app.config["API_VERSION"] = "v1"
     app.config["OPENAPI_VERSION"] = "3.0.3"
     app.config["OPENAPI_URL_PREFIX"] = "/"
@@ -33,10 +35,13 @@ def create_app(db_url=None):
     migrate = Migrate(app, db)
 
     api = Api(app)
+    CORS(app)
 
     # todo: create a new key and remove from code
     app.config["JWT_SECRET_KEY"] = "76517074903035659443580166051695395839"
     jwt = JWTManager(app)
 
+    api.register_blueprint(ExpenseBlueprint)
     api.register_blueprint(UserBlueprint)
+
     return app
