@@ -16,8 +16,8 @@ class ExpenseModel(db.Model):
     )
 
     user = db.relationship("UserModel", back_populates="expenses")
-    # category_id = db.Column(
-    #     db.Integer, db.ForeignKey("categories.id"), unique=False, nullable=False
-    # )
+    category_id = db.Column(
+        db.Integer, db.ForeignKey("categories.id"), unique=False, nullable=False
+    )
 
-    # category = db.relationship("CategoryModel", back_populates="categories")
+    category = db.relationship("CategoryModel", back_populates="expenses")

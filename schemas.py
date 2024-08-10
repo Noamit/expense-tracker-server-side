@@ -7,6 +7,7 @@ class PlainExpenseSchema(Schema):
     description = fields.Str()
     amount = fields.Float(required=True)
     date = fields.Date(required=True)
+    category_id = fields.Int(required=True)
 
 
 class PlainUserSchema(Schema):
@@ -23,6 +24,7 @@ class PlainCategorySchema(Schema):
 
 class ExpenseSchema(PlainExpenseSchema):
     user = fields.Nested(PlainUserSchema(), dump_only=True)
+    category = fields.Nested(PlainCategorySchema(), dump_only=True)
 
 
 class CategorySchema(PlainCategorySchema):
