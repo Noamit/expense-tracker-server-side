@@ -10,6 +10,7 @@ import models
 
 from resources.user import blp as UserBlueprint
 from resources.expense import blp as ExpenseBlueprint
+from resources.category import blp as CategoryBlueprint
 
 
 def create_app(db_url=None):
@@ -43,5 +44,5 @@ def create_app(db_url=None):
 
     api.register_blueprint(ExpenseBlueprint)
     api.register_blueprint(UserBlueprint)
-
+    api.register_blueprint(CategoryBlueprint)
     return app

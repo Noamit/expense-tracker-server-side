@@ -15,9 +15,21 @@ class PlainUserSchema(Schema):
     password = fields.Str(required=True, load_only=True)
 
 
+class PlainCategorySchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.Str(required=True)
+    description = fields.Str()
+
+
 class ExpenseSchema(PlainExpenseSchema):
     user = fields.Nested(PlainUserSchema(), dump_only=True)
 
 
+class CategorySchema(PlainCategorySchema):
+    user = fields.Nested(PlainUserSchema(), dump_only=True)
+
+
 class UserSchema(PlainUserSchema):
-    items = fields.List(fields.Nested(PlainExpenseSchema()), dump_only=True)
+    expenses = fields.List(fields.Nested(PlainExpenseSchema()), dump_only=True)
+    categories = fields.List(fields.Nested(
+        PlainCategorySchema()), dump_only=True)

@@ -10,3 +10,5 @@ class UserModel(db.Model):
 
     expenses = db.relationship(
         "ExpenseModel", back_populates="user", lazy="dynamic", cascade="all, delete")
+    categories = db.relationship(
+        "CategoryModel", back_populates="user", lazy="dynamic")
