@@ -35,7 +35,8 @@ class ExpenseList(MethodView):
     @jwt_required()
     @blp.response(200, ExpenseSchema(many=True))
     def get(self):
-        return ExpenseModel.query.all()
+        current_user = get_jwt_identity()
+        return ExpenseModel.query.filter_by(user_id=current_user).all()
 
     @jwt_required(fresh=True)
     @blp.arguments(ExpenseSchema)

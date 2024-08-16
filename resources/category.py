@@ -36,7 +36,8 @@ class CategoryList(MethodView):
     @jwt_required()
     @blp.response(200, CategorySchema(many=True))
     def get(self):
-        return CategoryModel.query.all()
+        current_user = get_jwt_identity()
+        return CategoryModel.query.filter_by(user_id=current_user).all()
 
     @jwt_required(fresh=True)
     @blp.arguments(CategorySchema)
