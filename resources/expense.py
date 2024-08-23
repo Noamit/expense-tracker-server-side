@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import db
 
 from models import ExpenseModel
-from schemas import ExpenseSchema
+from schemas import ExpenseSchema, ExpenseUpdateSchema
 
 blp = Blueprint("Expenses", "expenses", description="Operations on expenses")
 
@@ -26,6 +26,31 @@ class Expense(MethodView):
         db.session.delete(item)
         db.session.commit()
         return {"message": "Item deleted."}
+
+    @jwt_required()
+    @blp.arguments(ExpenseUpdateSchema)
+    @blp.response(200, ExpenseSchema)
+    def put(self, expense_data, expense_id):
+        item = ExpenseModel.query.get(expense_id)
+
+        if not item:
+            return {"message": "Expense not found"}, 404
+
+        # Update only the fields that are present in expense_data
+        if "price" in expense_data:
+            item.price = expense_data["price"]
+        if "name" in expense_data:
+            item.name = expense_data["name"]
+        if "description" in expense_data:
+            item.description = expense_data.get(
+                "description", item.description)
+        if "date" in expense_data:
+            item.date = expense_data["date"]
+        if "category_id" in expense_data:
+            item.category_id = expense_data["category_id"]
+
+        db.session.commit()
+        return item
 
 
 @blp.route("/expense")

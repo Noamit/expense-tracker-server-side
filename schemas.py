@@ -7,7 +7,7 @@ class PlainExpenseSchema(Schema):
     description = fields.Str()
     amount = fields.Float(required=True)
     date = fields.Date(required=True)
-    category_id = fields.Int(load_only=True)
+    category_id = fields.Int(required=True)
 
 
 class PlainUserSchema(Schema):
@@ -25,6 +25,15 @@ class PlainCategorySchema(Schema):
 class ExpenseSchema(PlainExpenseSchema):
     user = fields.Nested(PlainUserSchema(), dump_only=True)
     category = fields.Nested(PlainCategorySchema(), dump_only=True)
+
+
+# on update an item none of the fields is required
+class ExpenseUpdateSchema(Schema):
+    name = fields.Str()
+    amount = fields.Float()
+    date = fields.Date()
+    description = fields.Str()
+    category_id = fields.Int()
 
 
 class CategorySchema(PlainCategorySchema):
