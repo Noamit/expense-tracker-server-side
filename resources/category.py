@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import db
 
 from models import CategoryModel
-from schemas import CategorySchema
+from schemas import CategorySchema, CategoryUpdateSchema
 
 blp = Blueprint("Categories", "categories",
                 description="Operations on categories")
@@ -27,6 +27,23 @@ class Category(MethodView):
         db.session.delete(item)
         db.session.commit()
         return {"message": "Item deleted."}
+
+    @jwt_required()
+    @blp.arguments(CategoryUpdateSchema)
+    @blp.response(200, CategorySchema)
+    def put(self, category_data, categorie_id):
+        item = CategoryModel.query.get_or_404(categorie_id)
+
+        if not item:
+            return {"message": "Category not found"}, 404
+         # Update only the fields that are present in expense_data
+        if "description" in category_data:
+            item.description = category_data["description"]
+        if "name" in category_data:
+            item.name = category_data["name"]
+
+        db.session.commit()
+        return item
 
 
 @blp.route("/category")

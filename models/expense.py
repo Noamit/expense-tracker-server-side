@@ -11,6 +11,8 @@ class ExpenseModel(db.Model):
     description = db.Column(db.String())
     amount = db.Column(db.Float(precision=2), unique=False, nullable=False)
     date = db.Column(db.Date(), unique=False, nullable=False)
+
+    receipt_url = db.Column(db.String())
     user_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), unique=False, nullable=False
     )

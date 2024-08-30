@@ -1,3 +1,9 @@
+import os
+from flask_cors import cross_origin
+from werkzeug.utils import secure_filename
+# from app import app  # Importing the app instance
+
+from flask import request, current_app
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -64,9 +70,20 @@ class ExpenseList(MethodView):
         return ExpenseModel.query.filter_by(user_id=current_user).all()
 
     @jwt_required(fresh=True)
-    @blp.arguments(ExpenseSchema)
+    @blp.arguments(ExpenseSchema, location="form")
     @blp.response(201, ExpenseSchema)
     def post(self, expense_data):
+
+        # Get the file from the request
+        receipt_file = request.files.get('receipt')
+        if receipt_file:
+            filename = secure_filename(receipt_file.filename)
+            print(filename)
+            filepath = os.path.join(
+                current_app.config['UPLOAD_FOLDER'], filename)
+            # Save the file to the specified directory
+            receipt_file.save(filepath)
+            expense_data['receipt_url'] = filepath
 
         current_user = get_jwt_identity()
         expense = ExpenseModel(**expense_data, user_id=current_user)

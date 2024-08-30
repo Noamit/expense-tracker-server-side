@@ -30,14 +30,13 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url or "sqlite:///data.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PROPAGATE_EXCEPTIONS"] = True
-
+    app.config['UPLOAD_FOLDER'] = "uploads"
     # init SQLALCHEMY with our flack app
     db.init_app(app)
     migrate = Migrate(app, db)
 
     api = Api(app)
     CORS(app)
-
     # todo: create a new key and remove from code
     app.config["JWT_SECRET_KEY"] = "76517074903035659443580166051695395839"
     jwt = JWTManager(app)
