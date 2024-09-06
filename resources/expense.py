@@ -3,7 +3,7 @@ from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 # from app import app  # Importing the app instance
 
-from flask import request, current_app
+from flask import request, current_app, send_from_directory, url_for
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -15,6 +15,13 @@ from models import ExpenseModel
 from schemas import ExpenseSchema, ExpenseUpdateSchema
 
 blp = Blueprint("Expenses", "expenses", description="Operations on expenses")
+
+# Route to serve uploaded files
+
+
+@blp.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
 @blp.route("/expense/<int:expense_id>")
@@ -33,9 +40,9 @@ class Expense(MethodView):
         db.session.commit()
         return {"message": "Item deleted."}
 
-    @jwt_required()
-    @blp.arguments(ExpenseUpdateSchema)
-    @blp.response(200, ExpenseSchema)
+    @jwt_required(fresh=True)
+    @blp.arguments(ExpenseUpdateSchema, location="form")
+    @blp.response(201, ExpenseSchema)
     def put(self, expense_data, expense_id):
         item = ExpenseModel.query.get(expense_id)
 
@@ -54,6 +61,18 @@ class Expense(MethodView):
             item.date = expense_data["date"]
         if "category_id" in expense_data:
             item.category_id = expense_data["category_id"]
+
+        receipt_file = request.files.get('receipt')
+        if receipt_file:
+            filename = secure_filename(receipt_file.filename)
+            filepath = os.path.join(
+                current_app.config['UPLOAD_FOLDER'], filename)
+            # Save the file to the specified directory
+            receipt_file.save(filepath)
+            receipt_url = url_for(
+                'Expenses.uploaded_file', filename=filename, _external=True)
+
+            item.receipt_url = receipt_url
 
         db.session.commit()
         return item
@@ -78,12 +97,14 @@ class ExpenseList(MethodView):
         receipt_file = request.files.get('receipt')
         if receipt_file:
             filename = secure_filename(receipt_file.filename)
-            print(filename)
             filepath = os.path.join(
                 current_app.config['UPLOAD_FOLDER'], filename)
             # Save the file to the specified directory
             receipt_file.save(filepath)
-            expense_data['receipt_url'] = filepath
+            receipt_url = url_for(
+                'Expenses.uploaded_file', filename=filename, _external=True)
+
+            expense_data['receipt_url'] = receipt_url
 
         current_user = get_jwt_identity()
         expense = ExpenseModel(**expense_data, user_id=current_user)

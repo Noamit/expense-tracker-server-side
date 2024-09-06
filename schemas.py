@@ -8,7 +8,7 @@ class PlainExpenseSchema(Schema):
     amount = fields.Float(required=True)
     date = fields.Date(required=True)
     category_id = fields.Int(required=True)
-    # receipt_url = fields.Str()
+    receipt_url = fields.Str(dump_only=True)
 
 
 class PlainUserSchema(Schema):
@@ -35,6 +35,7 @@ class ExpenseUpdateSchema(Schema):
     date = fields.Date()
     description = fields.Str()
     category_id = fields.Int()
+    receipt_url = fields.Str(dump_only=True)
 
 
 class CategorySchema(PlainCategorySchema):
