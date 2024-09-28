@@ -1,9 +1,11 @@
 import os
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 # from app import app  # Importing the app instance
 
-from flask import request, current_app, send_from_directory, url_for
+from flask import jsonify, request, current_app, send_from_directory, url_for
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -13,6 +15,11 @@ from db import db
 
 from models import ExpenseModel
 from schemas import ExpenseSchema, ExpenseUpdateSchema
+
+from sqlalchemy import func
+from sqlalchemy import text
+
+from calendar import month_name
 
 blp = Blueprint("Expenses", "expenses", description="Operations on expenses")
 
@@ -50,8 +57,8 @@ class Expense(MethodView):
             return {"message": "Expense not found"}, 404
 
         # Update only the fields that are present in expense_data
-        if "price" in expense_data:
-            item.price = expense_data["price"]
+        if "amount" in expense_data:
+            item.amount = expense_data["amount"]
         if "name" in expense_data:
             item.name = expense_data["name"]
         if "description" in expense_data:
@@ -117,3 +124,49 @@ class ExpenseList(MethodView):
                 500, message=f"An error occurred while inserting the item: {str(e)}")
 
         return expense, 201
+
+
+@blp.route("/expense/monthly_totals")
+class ExpenseByMonth(MethodView):
+
+    @jwt_required()
+    def get(self):
+        current_user = get_jwt_identity()
+        months_param = request.args.get('months', default=6, type=int)
+        # months_param = months_param - 1 if months_param >= 1 else 0
+
+        start_date = date.today() - relativedelta(months=+months_param)
+        start_date = start_date.replace(day=1)
+
+        sql_query = text("""
+                        SELECT 
+                            strftime('%Y-%m', date) AS month, 
+                            SUM(amount) AS total_amount
+                        FROM expenses
+                        WHERE user_id = :user_id 
+                        AND date >= :start_date 
+                        GROUP BY month
+                        ORDER BY month;
+                    """)
+
+        # Execute the query
+        result = db.session.execute(sql_query, {
+            'user_id': current_user,
+            'start_date': start_date
+        }).fetchall()
+
+        all_months = []
+        expenses_dict = {row.month: row.total_amount for row in result}
+        current_date = start_date
+        end_date = date.today().replace(day=1)
+
+        while current_date <= end_date:
+            month_str = current_date.strftime('%Y-%m')
+            all_months.append({
+                'month': f"{month_name[int(month_str.split('-')[1])]} {month_str.split('-')[0]}",
+                # Default to 0 if no expenses
+                'amount': expenses_dict.get(month_str, 0)
+            })
+            current_date += relativedelta(months=1)
+
+        return jsonify(all_months), 200
