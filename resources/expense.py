@@ -93,7 +93,21 @@ class ExpenseList(MethodView):
     @blp.response(200, ExpenseSchema(many=True))
     def get(self):
         current_user = get_jwt_identity()
-        return ExpenseModel.query.filter_by(user_id=current_user).all()
+        query = ExpenseModel.query.filter_by(user_id=current_user)
+
+        # Get optional query parameters
+        name = request.args.get('name')
+        category_id = request.args.get('category_id')
+        date = request.args.get('date')
+
+        if name:
+            query = query.filter(ExpenseModel.name.ilike(f"%{name}%"))
+        if category_id:
+            query = query.filter(ExpenseModel.category_id == category_id)
+        if date:
+            query = query.filter(ExpenseModel.date == date)
+
+        return query.all()
 
     @jwt_required(fresh=True)
     @blp.arguments(ExpenseSchema, location="form")
