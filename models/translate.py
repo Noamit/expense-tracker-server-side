@@ -6,9 +6,15 @@ class TranslateModel(db.Model):
 
     # auto-increment by defult
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30), nullable=False)
+    key = db.Column(db.String(50), nullable=False)
+    value = db.Column(db.Text, nullable=False)
+
     lang_id = db.Column(
         db.Integer, db.ForeignKey("langs.id"), unique=False, nullable=False
     )
 
     lang = db.relationship("LangModel", back_populates="translates")
+
+    __table_args__ = (
+        db.UniqueConstraint('lang_id', 'key', name='uq_lang_id_key'),
+    )
