@@ -23,6 +23,18 @@ class PlainCategorySchema(Schema):
     description = fields.Str()
 
 
+class PlainLangSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.Str(required=True)
+
+
+class PlainTranslateSchema(Schema):
+    id = fields.Int(dump_only=True)
+    key = fields.Str(required=True)
+    value = fields.Str(required=True)
+    lang_id = fields.Int(required=True)
+
+
 class ExpenseSchema(PlainExpenseSchema):
     user = fields.Nested(PlainUserSchema(), dump_only=True)
     category = fields.Nested(PlainCategorySchema(), dump_only=True)
@@ -43,9 +55,27 @@ class CategorySchema(PlainCategorySchema):
     expenses = fields.List(fields.Nested(PlainExpenseSchema()), dump_only=True)
 
 
+class LangSchema(PlainLangSchema):
+    translates = fields.List(fields.Nested(
+        PlainTranslateSchema()), dump_only=True)
+
+
+class TranslateSchema(PlainTranslateSchema):
+    lang = fields.Nested(PlainLangSchema(), dump_only=True)
+
+
 class CategoryUpdateSchema(Schema):
     name = fields.Str()
     description = fields.Str()
+
+
+class LangUpdateSchema(Schema):
+    name = fields.Str()
+
+
+class TranslateUpdateSchema(Schema):
+    value = fields.Str()
+    lang_id = fields.Int()
 
 
 class UserSchema(PlainUserSchema):
