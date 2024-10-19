@@ -1,7 +1,7 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt
-
+from flask import jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 from db import db
 
@@ -33,7 +33,7 @@ class Translate(MethodView):
         db.session.commit()
         return {"message": "Item deleted."}
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blp.arguments(TranslateUpdateSchema)
     @blp.response(200, TranslateSchema)
     def put(self, translate_data, translate_id):
@@ -64,7 +64,12 @@ class TranslateList(MethodView):
         claims = get_jwt()
         if not claims.get('is_admin'):
             abort(403, message="Admin privileges are required to access this resource.")
-        return TranslateModel.query.all()
+        # Get optional query parameters
+        query = TranslateModel.query
+        lang_id = request.args.get('lang_id')
+        if lang_id:
+            query = query.filter(TranslateModel.lang_id == lang_id)
+        return query.all()
 
     @jwt_required(fresh=True)
     @blp.arguments(TranslateSchema)

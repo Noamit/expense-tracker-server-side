@@ -33,7 +33,7 @@ class Lang(MethodView):
         db.session.commit()
         return {"message": "Item deleted."}
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blp.arguments(LangUpdateSchema)
     @blp.response(200, LangSchema)
     def put(self, lang_data, lang_id):

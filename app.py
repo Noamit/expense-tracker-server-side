@@ -13,6 +13,7 @@ from resources.expense import blp as ExpenseBlueprint
 from resources.category import blp as CategoryBlueprint
 from resources.lang import blp as LangBlueprint
 from resources.translate import blp as TranslateBlueprint
+from resources.general_declaration import blp as GeneralDeclarationBlueprint
 
 
 def create_app(db_url=None):
@@ -48,5 +49,6 @@ def create_app(db_url=None):
     api.register_blueprint(CategoryBlueprint)
     api.register_blueprint(LangBlueprint)
     api.register_blueprint(TranslateBlueprint)
+    api.register_blueprint(GeneralDeclarationBlueprint)
 
     return app

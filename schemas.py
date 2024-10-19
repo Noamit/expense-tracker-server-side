@@ -82,3 +82,11 @@ class UserSchema(PlainUserSchema):
     expenses = fields.List(fields.Nested(PlainExpenseSchema()), dump_only=True)
     categories = fields.List(fields.Nested(
         PlainCategorySchema()), dump_only=True)
+
+
+class GeneralDeclarationSchema(Schema):
+    lang_id = fields.Int(required=True)  # Default language
+    translations = fields.Dict(
+        keys=fields.Str(), values=fields.Str(), required=True)
+    langs = fields.Dict(
+        keys=fields.Str(), values=fields.Str(), required=True)
