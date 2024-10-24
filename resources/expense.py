@@ -18,6 +18,8 @@ from db import db
 from models import ExpenseModel
 from schemas import ExpenseSchema, ExpenseUpdateSchema
 
+from utils import csv_export
+
 from sqlalchemy import func
 from sqlalchemy import text
 
@@ -26,6 +28,11 @@ from calendar import month_name
 blp = Blueprint("Expenses", "expenses", description="Operations on expenses")
 
 # Route to serve uploaded files
+
+
+@blp.route('/csv_exports/<filename>')
+def csv_exports_file(filename):
+    return send_from_directory(current_app.config['CSV_EXPORT_FOLDER'], filename)
 
 
 @blp.route('/uploads/<filename>')
@@ -99,33 +106,46 @@ class ExpenseList(MethodView):
         # Get optional query parameters
         name = request.args.get('name')
         category_id = request.args.get('category_id')
-        date = request.args.get('date')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        export = request.args.get('export', type=int, default=0)
         # Page number (default to 1)
         page = request.args.get('page', type=int, default=1)
         per_page = 10  # Number of items per page
+        export_url = ''
 
         if name:
             query = query.filter(ExpenseModel.name.ilike(f"%{name}%"))
         if category_id:
             query = query.filter(ExpenseModel.category_id == category_id)
-        if date:
-            query = query.filter(ExpenseModel.date == date)
+        if start_date:
+            query = query.filter(ExpenseModel.date >= start_date)
+        if end_date:
+            query = query.filter(ExpenseModel.date <= end_date)
 
         total_expenses = query.count()
         total_pages = math.ceil(total_expenses / per_page)
 
-        # Pagination: apply offset and limit
-        paginated_query = query.offset((page - 1) * per_page).limit(per_page)
-        expenses = paginated_query.all()
+        if not export:
+            # Pagination: apply offset and limit
+            query = query.offset((page - 1) * per_page).limit(per_page)
+
+        expenses = query.all()
         # Serialize the expenses using ExpenseSchema
         expense_schema = ExpenseSchema(many=True)
         expenses_data = expense_schema.dump(expenses)
 
+        if export:
+            filename = csv_export(user_id=current_user, headers=[
+                "name", "description", "date"], data=expenses_data)
+            export_url = url_for(
+                'Expenses.csv_exports_file', filename=filename, _external=True)
         # Return the paginated response
         return {
-            'expenses': expenses_data,  # List of paginated and serialized expenses
-            'total_pages': total_pages,  # Total number of pages
-            'current_page': page  # The current page number
+            'expenses': expenses_data,
+            'total_pages': total_pages,
+            'current_page': page,
+            'export_url': export_url
         }
 
     @jwt_required(fresh=True)

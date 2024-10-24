@@ -34,6 +34,7 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config['UPLOAD_FOLDER'] = "uploads"
+    app.config['CSV_EXPORT_FOLDER'] = "csv_exports"
     # init SQLALCHEMY with our flack app
     db.init_app(app)
     migrate = Migrate(app, db)
