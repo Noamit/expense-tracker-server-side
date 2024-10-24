@@ -1,4 +1,6 @@
 import os
+import math
+
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from flask_cors import cross_origin
@@ -90,7 +92,6 @@ class ExpenseList(MethodView):
 
     # many=True return a list of items
     @jwt_required()
-    @blp.response(200, ExpenseSchema(many=True))
     def get(self):
         current_user = get_jwt_identity()
         query = ExpenseModel.query.filter_by(user_id=current_user)
@@ -99,6 +100,9 @@ class ExpenseList(MethodView):
         name = request.args.get('name')
         category_id = request.args.get('category_id')
         date = request.args.get('date')
+        # Page number (default to 1)
+        page = request.args.get('page', type=int, default=1)
+        per_page = 10  # Number of items per page
 
         if name:
             query = query.filter(ExpenseModel.name.ilike(f"%{name}%"))
@@ -107,7 +111,22 @@ class ExpenseList(MethodView):
         if date:
             query = query.filter(ExpenseModel.date == date)
 
-        return query.all()
+        total_expenses = query.count()
+        total_pages = math.ceil(total_expenses / per_page)
+
+        # Pagination: apply offset and limit
+        paginated_query = query.offset((page - 1) * per_page).limit(per_page)
+        expenses = paginated_query.all()
+        # Serialize the expenses using ExpenseSchema
+        expense_schema = ExpenseSchema(many=True)
+        expenses_data = expense_schema.dump(expenses)
+
+        # Return the paginated response
+        return {
+            'expenses': expenses_data,  # List of paginated and serialized expenses
+            'total_pages': total_pages,  # Total number of pages
+            'current_page': page  # The current page number
+        }
 
     @jwt_required(fresh=True)
     @blp.arguments(ExpenseSchema, location="form")
