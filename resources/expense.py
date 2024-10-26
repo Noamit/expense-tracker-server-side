@@ -216,7 +216,8 @@ class ExpenseByMonth(MethodView):
         while current_date <= end_date:
             month_str = current_date.strftime('%Y-%m')
             all_months.append({
-                'month': f"{month_name[int(month_str.split('-')[1])]} {month_str.split('-')[0]}",
+                'month': f"{month_name[int(month_str.split('-')[1])]}",
+                'year': f"{month_str.split('-')[0]}",
                 # Default to 0 if no expenses
                 'amount': expenses_dict.get(month_str, 0)
             })
