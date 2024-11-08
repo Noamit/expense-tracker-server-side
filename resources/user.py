@@ -1,13 +1,12 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
-from flask_jwt_extended import create_access_token, create_refresh_token
-
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from db import db
 
 from models import UserModel
-from schemas import UserSchema
+from schemas import UserSchema, UserUpdateSchema, UserPasswordUpdateSchema
 
 blp = Blueprint("Users", "users", description="Operations on users")
 
@@ -48,3 +47,57 @@ class UserLogin(MethodView):
             return {"access_token": access_token, "refresh_token": refresh_token}, 200
 
         abort(401, message="Invalid credentials.")
+
+
+@blp.route("/settings")
+class UserSettings(MethodView):
+    @jwt_required(fresh=True)
+    @blp.arguments(UserUpdateSchema)
+    @blp.response(201, UserUpdateSchema)
+    def put(self, user_data):
+        current_user = get_jwt_identity()
+        user = UserModel.query.get(current_user)
+
+        if not user:
+            abort(401, message="Invalid credentials.")
+
+        # Update only the fields that are present in expense_data
+        if "lang_id" in user_data:
+            user.lang_id = user_data["lang_id"]
+
+        db.session.commit()
+        return user
+
+
+@blp.route("/user")
+class UserPassword(MethodView):
+    @jwt_required(fresh=True)
+    @blp.arguments(UserPasswordUpdateSchema)
+    @blp.response(
+        202,
+        description="not updated",
+        example={"message": "Passwords do not match."},
+    )
+    @blp.response(
+        200,
+        description="updated",
+        example={"message": "Tag deleted."},
+    )
+    def put(self, user_data):
+        current_user = get_jwt_identity()
+        user = UserModel.query.get(current_user)
+
+        if user:
+            if pbkdf2_sha256.verify(user_data["current_password"], user.password):
+                if user_data["new_password"] == user_data["confirm_password"]:
+                    user.password = pbkdf2_sha256.hash(
+                        user_data["new_password"])
+                else:
+                    return {"message": "Passwords do not match."}, 202
+            else:
+                return {"message": "Incorrect password."}, 202
+        else:
+            abort(401, message="Invalid credentials.")
+
+        db.session.commit()
+        return {"message": "Password updated"}, 200

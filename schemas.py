@@ -15,6 +15,7 @@ class PlainUserSchema(Schema):
     id = fields.Int(dump_only=True)
     username = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)
+    lang_id = fields.Int()
 
 
 class PlainCategorySchema(Schema):
@@ -48,6 +49,16 @@ class ExpenseUpdateSchema(Schema):
     description = fields.Str()
     category_id = fields.Int()
     receipt_url = fields.Str(dump_only=True)
+
+
+class UserUpdateSchema(Schema):
+    lang_id = fields.Int()
+
+
+class UserPasswordUpdateSchema(Schema):
+    current_password = fields.Str(required=True, load_only=True)
+    new_password = fields.Str(required=True, load_only=True)
+    confirm_password = fields.Str(required=True, load_only=True)
 
 
 class CategorySchema(PlainCategorySchema):

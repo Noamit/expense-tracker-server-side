@@ -8,6 +8,9 @@ class UserModel(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(80), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
+    lang_id = db.Column(
+        db.Integer, db.ForeignKey("langs.id"), unique=False, nullable=False
+    )
     expenses = db.relationship(
         "ExpenseModel", back_populates="user", lazy="dynamic", cascade="all, delete")
     categories = db.relationship(
