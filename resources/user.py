@@ -17,6 +17,12 @@ class UserRegister(MethodView):
 
     @blp.arguments(UserSchema)
     def post(self, user_data):
+        fields = ["username", "password"]
+
+        # fields = ["username", "password", "first_name", "last_name"]
+        for field in fields:
+            if user_data[field] == "":
+                abort(409, message="All fields are required.")
 
         if UserModel.query.filter(UserModel.username == user_data["username"]).first():
             abort(409, message="A user with that username already exists.")
@@ -36,6 +42,11 @@ class UserRegister(MethodView):
 class UserLogin(MethodView):
     @blp.arguments(UserSchema)
     def post(self, user_data):
+
+        fields = ["username", "password"]
+        for field in fields:
+            if user_data[field] == "":
+                abort(409, message="All fields are required.")
 
         user = UserModel.query.filter(
             UserModel.username == user_data["username"]).first()
