@@ -1,12 +1,9 @@
 from flask.views import MethodView
-from flask_smorest import Blueprint, abort
-from flask_jwt_extended import jwt_required, get_jwt
-from flask import jsonify, request
-from sqlalchemy.exc import SQLAlchemyError
-from db import db
+from flask_smorest import Blueprint
+from flask import request
 
 from models import TranslateModel, LangModel
-from schemas import TranslateSchema, GeneralDeclarationSchema
+from schemas import GeneralDeclarationSchema
 from utils import get_default_lang_id
 
 blp = Blueprint("GeneralDeclaration", "generalDeclaration",
