@@ -133,7 +133,9 @@ class ExpenseList(MethodView):
             query = query.filter(ExpenseModel.date <= end_date)
 
         total_expenses = query.count()
-        total_pages = math.ceil(total_expenses / per_page)
+
+        total_pages = 1 if total_expenses == 0 else math.ceil(
+            total_expenses / per_page)
 
         if not export:
             # Pagination: apply offset and limit
