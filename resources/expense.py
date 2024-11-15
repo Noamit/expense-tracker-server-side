@@ -1,5 +1,6 @@
 import os
 import math
+import hashlib
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -36,6 +37,14 @@ def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
+def generate_hashed_filename(expense_id, original_filename):
+    """Generate a hashed filename using expense ID and original filename."""
+    # Extract the file extension
+    file_extension = os.path.splitext(original_filename)[1]
+    hash_object = hashlib.sha256(f"{expense_id}_{original_filename}".encode())
+    return f"{hash_object.hexdigest()}{file_extension}"
+
+
 @blp.route("/expense/<int:expense_id>")
 class Expense(MethodView):
 
@@ -56,6 +65,8 @@ class Expense(MethodView):
     @blp.arguments(ExpenseUpdateSchema, location="form")
     @blp.response(201, ExpenseSchema)
     def put(self, expense_data, expense_id):
+
+        current_user = get_jwt_identity()
         item = ExpenseModel.query.get(expense_id)
 
         if not item:
@@ -76,7 +87,8 @@ class Expense(MethodView):
 
         receipt_file = request.files.get('receipt')
         if receipt_file:
-            filename = secure_filename(receipt_file.filename)
+            original_filename = secure_filename(receipt_file.filename)
+            filename = generate_hashed_filename(expense_id, original_filename)
             filepath = os.path.join(
                 current_app.config['UPLOAD_FOLDER'], filename)
             # Save the file to the specified directory
@@ -150,24 +162,29 @@ class ExpenseList(MethodView):
     @blp.response(201, ExpenseSchema)
     def post(self, expense_data):
 
-        # Get the file from the request
-        receipt_file = request.files.get('receipt')
-        if receipt_file:
-            filename = secure_filename(receipt_file.filename)
-            filepath = os.path.join(
-                current_app.config['UPLOAD_FOLDER'], filename)
-            # Save the file to the specified directory
-            receipt_file.save(filepath)
-            receipt_url = url_for(
-                'Expenses.uploaded_file', filename=filename, _external=True)
-
-            expense_data['receipt_url'] = receipt_url
-
         current_user = get_jwt_identity()
+        # Get the file from the request
+
         expense = ExpenseModel(**expense_data, user_id=current_user)
         try:
             db.session.add(expense)
             db.session.commit()
+
+            receipt_file = request.files.get('receipt')
+            if receipt_file:
+                original_filename = secure_filename(receipt_file.filename)
+                filename = generate_hashed_filename(
+                    expense.id, original_filename)
+                filepath = os.path.join(
+                    current_app.config['UPLOAD_FOLDER'], filename)
+                # Save the file to the specified directory
+                receipt_file.save(filepath)
+                receipt_url = url_for(
+                    'Expenses.uploaded_file', filename=filename, _external=True)
+
+                expense.receipt_url = receipt_url
+                db.session.commit()
+
         except SQLAlchemyError as e:
             db.session.rollback()  # Rollback in case of error
             abort(
