@@ -85,7 +85,8 @@ class Expense(MethodView):
                 'Expenses.uploaded_file', filename=filename, _external=True)
 
             item.receipt_url = receipt_url
-
+        else:
+            item.receipt_url = None
         db.session.commit()
         return item
 
