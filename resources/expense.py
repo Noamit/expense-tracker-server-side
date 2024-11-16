@@ -4,7 +4,6 @@ import hashlib
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 # from app import app  # Importing the app instance
 
@@ -142,13 +141,26 @@ class ExpenseList(MethodView):
             query = query.offset((page - 1) * per_page).limit(per_page)
 
         expenses = query.all()
+
         # Serialize the expenses using ExpenseSchema
         expense_schema = ExpenseSchema(many=True)
         expenses_data = expense_schema.dump(expenses)
 
         if export:
+            expenses_data_for_export = []
+
+            for expense in expenses_data:
+                new_expense = {}
+                new_expense["name"] = expense["name"]
+                new_expense["description"] = expense["description"]
+                new_expense["category"] = expense["category"]["name"]
+                new_expense["amount"] = expense["amount"]
+                new_expense["date"] = expense["date"]
+
+                expenses_data_for_export.append(new_expense)
+
             filename = csv_export(user_id=current_user, headers=[
-                "name", "description", "date"], data=expenses_data)
+                "name", "description", "category", "amount", "date"], data=expenses_data_for_export)
             export_url = url_for(
                 'Expenses.csv_exports_file', filename=filename, _external=True)
         # Return the paginated response
