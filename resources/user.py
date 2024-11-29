@@ -53,9 +53,9 @@ class UserLogin(MethodView):
 
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
             lang_id = user.lang_id or get_default_lang_id()
-            access_token = create_access_token(identity=user.id, additional_claims={
+            access_token = create_access_token(identity=str(user.id), additional_claims={
                                                'is_admin': user.is_admin}, fresh=True)
-            refresh_token = create_refresh_token(identity=user.id, additional_claims={
+            refresh_token = create_refresh_token(identity=str(user.id), additional_claims={
                                                  'is_admin': user.is_admin})
             return {"access_token": access_token, "refresh_token": refresh_token, 'lang_id': lang_id}, 200
 
